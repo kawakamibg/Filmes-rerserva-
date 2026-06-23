@@ -59,8 +59,22 @@
         
         <hr>
 
-      
-        <div id="root"></div>
+        <div class="tabs">
+            <button class="tab-button active" data-tab="watched">Assistidos</button>
+            <button class="tab-button" data-tab="watchlist">Watchlist</button>
+        </div>
+
+        <section id="watched-list-section" class="tab-content active">
+            <h2>Meus Filmes Assistidos</h2>
+            <div id="movie-grid" class="movie-grid">
+                </div>
+        </section>
+
+        <section id="watchlist-section" class="tab-content">
+            <h2>Minha Watchlist</h2>
+            <div id="watchlist-container" class="watchlist-container">
+                </div>
+        </section>
 
     </main>
 
@@ -84,8 +98,6 @@
     </div>
 
     <script src="script.js"></script>
-
-    <script type="module" src="/src/main.jsx"></script>
 
 </body>
 </html>

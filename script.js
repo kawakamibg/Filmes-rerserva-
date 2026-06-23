@@ -33,22 +33,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultsContainer = document.getElementById('tmdb-results');
     let searchTimeout;
 
-    // Fica "escutando" o que você digita no campo de título
-    inputTitulo.addEventListener('input', (e) => {
-        clearTimeout(searchTimeout); // Evita buscar a cada letra, espera você parar de digitar
-        const query = e.target.value.trim();
-        
-        // Só busca se tiver 3 letras ou mais
-        if (query.length < 3) {
-            resultsContainer.style.display = 'none';
-            return;
-        }
+    // Fica "escutando" o que você digita no campo de título (só se existir o elemento)
+    if (inputTitulo) {
+        inputTitulo.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout); // Evita buscar a cada letra, espera você parar de digitar
+            const query = e.target.value.trim();
+            
+            // Só busca se tiver 3 letras ou mais
+            if (query.length < 3) {
+                if (resultsContainer) resultsContainer.style.display = 'none';
+                return;
+            }
 
-        // Espera meio segundo depois que você parar de digitar para fazer a busca
-        searchTimeout = setTimeout(() => {
-            buscarFilmesTMDB(query);
-        }, 500); 
-    });
+            // Espera meio segundo depois que você parar de digitar para fazer a busca
+            searchTimeout = setTimeout(() => {
+                buscarFilmesTMDB(query);
+            }, 500); 
+        });
+    } else {
+        console.warn('Elemento #movie-title não encontrado — busca TMDB desativada.');
+    }
 
     async function buscarFilmesTMDB(query) {
         try {
@@ -66,6 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function mostrarResultados(filmes) {
+        if (!resultsContainer) return;
         resultsContainer.innerHTML = ''; // Limpa resultados antigos
         
         filmes.forEach(filme => {
@@ -101,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Esconde a lista de resultados se você clicar fora dela
     document.addEventListener('click', (e) => {
         if (!e.target.closest('#add-movie')) {
-            resultsContainer.style.display = 'none';
+            if (resultsContainer) resultsContainer.style.display = 'none';
         }
     });
     // ================= FIM DA INTEGRAÇÃO TMDB =================
@@ -159,14 +164,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Eventos para fechar o modal
-    modalCloseBtn.addEventListener('click', closeDetailModal);
-    
-    modal.addEventListener('click', (e) => {
-        // Fecha o modal apenas se clicar no fundo (overlay)
-        if (e.target === modal) {
-            closeDetailModal();
-        }
-    });
+    if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeDetailModal);
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            // Fecha o modal apenas se clicar no fundo (overlay)
+            if (e.target === modal) {
+                closeDetailModal();
+            }
+        });
+    }
 
     // --- Utilitários e Lógica de Formulário ---
 
@@ -193,14 +199,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Alterna a visibilidade dos campos de nota e review
     function toggleWatchedFields() {
+        if (!watchedFields || !itemTypeSelect) return;
         watchedFields.style.display = itemTypeSelect.value === 'watched' ? 'block' : 'none';
-        document.getElementById('movie-rating').required = itemTypeSelect.value === 'watched';
+        const movieRatingEl = document.getElementById('movie-rating');
+        if (movieRatingEl) movieRatingEl.required = itemTypeSelect.value === 'watched';
     }
     
-    itemTypeSelect.addEventListener('change', toggleWatchedFields);
+    if (itemTypeSelect) itemTypeSelect.addEventListener('change', toggleWatchedFields);
 
     // Adicionar Filme/Item (Função CRUD)
-    form.addEventListener('submit', (e) => {
+    if (form) {
+        form.addEventListener('submit', (e) => {
         e.preventDefault();
         
         const title = document.getElementById('movie-title').value;
@@ -222,16 +231,25 @@ document.addEventListener('DOMContentLoaded', () => {
             moviesData.watchlist.unshift({ id: newId, title, poster: posterUrl, type: 'watchlist' });
         }
 
-        saveMoviesToStorage();
-        renderAll();
-        form.reset();
-        itemTypeSelect.value = 'watched';
-        toggleWatchedFields();
-    });
+            saveMoviesToStorage();
+            renderAll();
+            form.reset();
+            if (itemTypeSelect) {
+                itemTypeSelect.value = 'watched';
+                toggleWatchedFields();
+            }
+        });
+    } else {
+        console.warn('Formulário #movie-form não encontrado — adição de filmes desativada.');
+    }
 
     // --- Funções de Renderização ---
 
     function renderWatchedGrid() {
+        if (!movieGrid) {
+            console.warn('Elemento #movie-grid não encontrado — renderWatchedGrid abortado.');
+            return;
+        }
         movieGrid.innerHTML = '';
         const watchedMovies = moviesData.watched;
 
@@ -276,14 +294,21 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Preenche as opções de rating no formulário de edição
             const editRatingSelect = movieCard.querySelector('.edit-rating');
-            editRatingSelect.innerHTML = document.getElementById('movie-rating').innerHTML;
-            editRatingSelect.value = movie.rating;
+            const movieRatingTemplate = document.getElementById('movie-rating');
+            if (editRatingSelect && movieRatingTemplate) {
+                editRatingSelect.innerHTML = movieRatingTemplate.innerHTML;
+                editRatingSelect.value = movie.rating;
+            }
 
             movieGrid.appendChild(movieCard);
         });
     }
 
     function renderWatchlist() {
+        if (!watchlistContainer) {
+            console.warn('Elemento #watchlist-container não encontrado — renderWatchlist abortado.');
+            return;
+        }
         watchlistContainer.innerHTML = '';
         const watchlistItems = moviesData.watchlist;
 
@@ -401,18 +426,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // --- Lógica de Abas ---
-    tabsContainer.addEventListener('click', (e) => {
-        if (e.target.classList.contains('tab-button')) {
-            switchTab(e.target.dataset.tab);
-        }
-    });
+    if (tabsContainer) {
+        tabsContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('tab-button')) {
+                switchTab(e.target.dataset.tab);
+            }
+        });
+    } else {
+        console.warn('Elemento .tabs não encontrado — sistema de abas desativado.');
+    }
 
     function switchTab(targetTab) {
         document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
 
-        document.querySelector(`.tab-button[data-tab="${targetTab}"]`).classList.add('active');
-        document.getElementById(`${targetTab}-list-section` || `${targetTab}-section`).classList.add('active');
+        const btn = document.querySelector(`.tab-button[data-tab="${targetTab}"]`);
+        if (btn) btn.classList.add('active');
+
+        const section = document.getElementById(`${targetTab}-list-section`) || document.getElementById(`${targetTab}-section`);
+        if (section) section.classList.add('active');
     }
 
     renderAll();
