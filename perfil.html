@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Perfil - Minha Lista de Filmes</title>
+    <link rel="stylesheet" href="dist/output.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="icon" type="image/x-icon" href="https://a.ltrbxd.com/logos/letterboxd-decal-dots-pos-rgb.svg">
+</head>
+<body>
+    <header>
+        <h1>⚙️ Configurações da Conta</h1>
+        <p>Gerencie seus dados de acesso</p>
+        <div style="position: absolute; top: 20px; right: 20px;">
+            <a href="index.html" class="profile-btn"><i class="fas fa-arrow-left"></i> Voltar à Lista</a>
+        </div>
+    </header>
+
+    <main>
+        <section id="add-movie" style="max-width: 600px; margin: 0 auto;">
+            <h2>Mudar Nome de Usuário</h2>
+            <form id="form-username">
+                <p style="color: var(--text-secondary); margin-bottom: 15px;">
+                    Usuário atual: <strong id="display-current-username" style="color: var(--accent-color); font-size: 1.2em;"></strong>
+                </p>
+                <input type="text" id="new-username" placeholder="Digite o novo nome de usuário" required>
+                <button type="submit">Atualizar Nome</button>
+            </form>
+
+            <hr style="margin: 40px 0; border-color: #333;">
+
+            <h2>Mudar Senha</h2>
+            <form id="form-password">
+                <input type="password" id="current-password" placeholder="Sua senha atual" required>
+                <input type="password" id="new-password" placeholder="Nova senha" required>
+                <button type="submit">Atualizar Senha</button>
+            </form>
+        </section>
+
+        <!-- Aqui o React vai renderizar o nosso novo componente -->
+        <div id="meu-componente-react"></div>
+    </main>
+
+    <!-- SCRIPTS VANILLA (SEU CÓDIGO ORIGINAL) -->
+    <script>
+        // --- 1. Verifica se está logado e carrega os dados ---
+        const currentUser = localStorage.getItem('letterboxd_user');
+        if (!currentUser) {
+            window.location.href = 'login.html';
+        }
+
+        document.getElementById('display-current-username').textContent = currentUser;
+
+        // --- 2. Função para Mudar o Nome de Usuário ---
+        document.getElementById('form-username').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const newUsername = document.getElementById('new-username').value.trim();
+
+            if (newUsername === currentUser) {
+                alert('Esse já é o seu nome atual!');
+                return;
+            }
+
+            let users = JSON.parse(localStorage.getItem('letterboxd_users_db')) || [];
+            
+            if (users.some(u => u.username === newUsername)) {
+                alert('Esse nome de usuário já está em uso por outra pessoa. Escolha outro!');
+                return;
+            }
+
+            const userIndex = users.findIndex(u => u.username === currentUser);
+            if (userIndex > -1) {
+                users[userIndex].username = newUsername;
+                localStorage.setItem('letterboxd_users_db', JSON.stringify(users));
+                localStorage.setItem('letterboxd_user', newUsername);
+                
+                alert('Nome de usuário atualizado com sucesso!');
+                window.location.reload();
+            }
+        });
+
+        // --- 3. Função para Mudar a Senha ---
+        document.getElementById('form-password').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const currentPasswordInput = document.getElementById('current-password').value;
+            const newPasswordInput = document.getElementById('new-password').value;
+
+            let users = JSON.parse(localStorage.getItem('letterboxd_users_db')) || [];
+            const userIndex = users.findIndex(u => u.username === currentUser);
+
+            if (userIndex > -1) {
+                if (users[userIndex].password !== currentPasswordInput) {
+                    alert('A senha atual está incorreta!');
+                    return;
+                }
+
+                users[userIndex].password = newPasswordInput;
+                localStorage.setItem('letterboxd_users_db', JSON.stringify(users));
+                
+                alert('Senha atualizada com sucesso!');
+                document.getElementById('form-password').reset();
+            }
+        });
+    </script>
+
+    <!-- IMPORTAÇÃO DO REACT VIA CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- CÓDIGO REACT -->
+    <script type="text/babel">
+        function DangerZone() {
+            // Criamos um "Estado" para controlar se o usuário já clicou no botão uma vez
+            const [mostrarConfirmacao, setMostrarConfirmacao] = React.useState(false);
+
+            // Função que roda apenas se o usuário confirmar a exclusão
+            const deletarConta = () => {
+                const loggedUser = localStorage.getItem('letterboxd_user');
+                let users = JSON.parse(localStorage.getItem('letterboxd_users_db')) || [];
+                
+                // Filtra o array de usuários, removendo o usuário atual
+                users = users.filter(u => u.username !== loggedUser);
+                
+                // Salva o novo banco de dados no localStorage
+                localStorage.setItem('letterboxd_users_db', JSON.stringify(users));
+                
+                // Remove a sessão ativa
+                localStorage.removeItem('letterboxd_user');
+                
+                alert('Sua conta foi excluída para sempre.');
+                window.location.href = 'login.html'; // Redireciona para o login
+            };
+
+            return (
+                <section style={{ maxWidth: '600px', margin: '40px auto', padding: '20px', border: '1px solid #ef4444', borderRadius: '8px', backgroundColor: '#fff5f5' }}>
+                    <h2 style={{ color: '#dc2626', marginTop: 0, fontSize: '1.5em', borderBottom: 'none' }}>Zona de Perigo</h2>
+                    <p style={{ color: '#991b1b', marginBottom: '20px' }}>
+                        Uma vez que você excluir sua conta, não há volta. Por favor, tenha certeza.
+                    </p>
+                    
+                    {/* Renderização Condicional: Se NÃO estiver confirmando, mostra o botão padrão. Se SIM, mostra a confirmação. */}
+                    {!mostrarConfirmacao ? (
+                        <button 
+                            onClick={() => setMostrarConfirmacao(true)}
+                            style={{ backgroundColor: '#ef4444', color: 'white', padding: '12px 20px', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}
+                        >
+                            Excluir Minha Conta
+                        </button>
+                    ) : (
+                        <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+                            <strong style={{ color: '#dc2626' }}>Tem certeza absoluta?</strong>
+                            <button 
+                                onClick={deletarConta}
+                                style={{ backgroundColor: '#dc2626', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}
+                            >
+                                Sim, excluir agora
+                            </button>
+                            <button 
+                                onClick={() => setMostrarConfirmacao(false)}
+                                style={{ backgroundColor: '#e5e7eb', color: '#374151', padding: '10px 15px', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+                            >
+                                Cancelar
+                            </button>
+                        </div>
+                    )}
+                </section>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('meu-componente-react'));
+        root.render(<DangerZone />);
+    </script>
+</body>
+</html>

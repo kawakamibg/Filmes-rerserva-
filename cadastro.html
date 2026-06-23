@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro - Minha Lista de Filmes</title>
+    <link rel="stylesheet" href="dist/output.css">
+    <link rel="icon" type="image/x-icon" href="https://a.ltrbxd.com/logos/letterboxd-decal-dots-pos-rgb.svg">
+</head>
+<body class="login-body">
+    <div class="login-container">
+        <div class="login-box">
+            <h1>🎬 Criar Conta</h1>
+            <p>Junte-se a nós e crie sua lista</p>
+            
+            <form id="register-form">
+                <input type="text" id="reg-username" placeholder="Escolha um nome de usuário" required>
+                <input type="password" id="reg-password" placeholder="Crie uma senha" required>
+                <input type="password" id="reg-confirm-password" placeholder="Confirme a senha" required>
+                <button type="submit">Cadastrar</button>
+            </form>
+            
+            <p class="login-footer" style="margin-top: 20px;">
+                Já tem uma conta? <a href="login.html" style="color: var(--accent-color); text-decoration: none; font-weight: bold;">Faça login aqui</a>.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('register-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('reg-username').value.trim();
+            const password = document.getElementById('reg-password').value;
+            const confirmPassword = document.getElementById('reg-confirm-password').value;
+            
+            // 1. Verifica se as senhas são iguais
+            if (password !== confirmPassword) {
+                alert('As senhas não coincidem! Tente novamente.');
+                return;
+            }
+
+            // 2. Puxa a lista de usuários que já existem (ou cria uma vazia)
+            let users = JSON.parse(localStorage.getItem('letterboxd_users_db')) || [];
+            
+            // 3. Verifica se o usuário já existe
+            const userExists = users.some(u => u.username === username);
+            if (userExists) {
+                alert('Esse nome de usuário já está em uso. Escolha outro!');
+                return;
+            }
+
+            // 4. Salva o novo usuário no "banco de dados" do navegador
+            users.push({ username: username, password: password });
+            localStorage.setItem('letterboxd_users_db', JSON.stringify(users));
+            
+            alert('Conta criada com sucesso! Agora você pode fazer o login.');
+            
+            // 5. Redireciona para a tela de login
+            window.location.href = 'login.html';
+        });
+    </script>
+</body>
+</html>
